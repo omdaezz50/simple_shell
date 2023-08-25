@@ -9,7 +9,7 @@
  */
 char *_strncpy(char *dest, char *src, int n)
 {
-	int t, y;
+	int tt, y;
 	char *s = dest;
 
 	t = 0;
