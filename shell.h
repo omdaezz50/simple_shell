@@ -62,7 +62,6 @@ typedef struct liststr
  *@linecount_flag: if on count this line of input
  *@fname: the program filename
  *@env: linked list local copy of environ
- 
  *@environ: custom modified copy of environ from LL env
  *@history: the history node
  *@alias: the alias node
