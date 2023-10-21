@@ -1,133 +1,174 @@
-#ifndef SHELL_H
-#define SHELL_H
+#ifndef _SHELL_H_
+#define _SHELL_H_
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/types.h>
 #include <sys/wait.h>
-#include <ctype.h>
+#include <sys/stat.h>
+#include <limits.h>
+#include <fcntl.h>
+#include <errno.h>
+#define READ_BUF_SIZE 1024
+#define WRITE_BUF_SIZE 1024
+#define BUF_FLUSH -1
 
-#define INPUT_SIZE 200
+#define CMD_NORM	0
+#define CMD_OR		1
+#define CMD_AND		2
+#define CMD_CHAIN	3
 
-#define LOOP 10
+#define CONVERT_LOWERCASE	1
+#define CONVERT_UNSIGNED	2
 
-#define PATH_SIZE 1024
+#define USE_GETLINE 0
+#define USE_STRTOK 0
 
-#define ARG_SIZE 200
+#define HIST_FILE	".simple_shell_history"
+#define HIST_MAX	4096
 
-void set_executable_name(char *name);
-
-void prompt(char *c, int len);
-
-ssize_t take_input(char *input);
-
-int run_command(char *user_command, char *envp[]);
-
-void handle_command_exit(int status, const char *user_command);
-
-void tokenize_command(char *user_command, char **args);
-
-int exec_command(char *user_command, char *args[], char **env);
-
-int exec_command_withpath(char *user_command, char *args[], char **env);
-
-void exitShell(int status);
-
-int chk_cmd_before_fork(char *user_command);
-
-int setenv_cmd(char *user_command);
-
-int unsetenv_cmd(char *user_command);
-
-int unset_env(char *var);
-
-int token_command(char *user_command, char *args[]);
-
-int set_env_var(char *var, char *value);
-
-int cd_dir(const char *args, char *envp[]);
-
-int upd_env_var(const char *path, char *envp[]);
-
-int change_dir(const char *path);
-
-int pass_cd_arg(const char *user_command);
-
-ssize_t get_line(char *buffer, size_t size);
+extern char **environ;
 
 
-char *s_strdup(const char *string);
+typedef struct lstr
+{
+	int num;
+	char *str;
+	struct lstr *next;
+} list_t;
 
-int s_strlen(const char *string);
+typedef struct passinfo
+{
+	char *arg;
+	char **argv;
+	char *path;
+	int argc;
+	unsigned int l_count;
+	int err_num;
+	int linecount_flag;
+	char *fname;
+	list_t *env;
+	list_t *history;
+	list_t *alia;
+	char **environ;
+	int env_changed;
+	int status;
 
-int s_strcspn(const char *string, const char *chr);
+	char **cmd_buf; /* pointer to cmd ; chain buffer, for memory mangement */
+	int cmd_buf_type; /* CMD_type ||, &&, ; */
+	int rfd;
+	int histcount;
+} info_t;
 
-char *s_strcpy(char *dest_string, const char *src_String);
+#define INFO_INIT \
+{NULL, NULL, NULL, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, 0, 0, NULL, \
+	0, 0, 0}
 
-char *s_strchr(const char *string, int chr);
+typedef struct bultin
+{
+	char *type;
+	int (*func)(info_t *);
+} bultin_table;
 
-char *s_strcat(char *dest, const char *src);
+int hsh(info_t *, char **);
+int find_bultin(info_t *);
+void find_cmd(info_t *);
+void fork_cmd(info_t *);
 
-int s_strcmp(const char *str1, const char *str2);
+int is_cmd(info_t *, char *);
+char *dup_chars(char *, int, int);
+char *find_path(info_t *, char *, char *);
 
-char *initialize_token(char *string);
+int loophsh(char **);
 
-char *tokenize(char *token, const char *deli);
+void _eputs(char *);
+int _eputchr(char);
+int _putfd(char c, int fd);
+int _putsfd(char *str, int fd);
 
-char *finalize_token();
+int _strlen(char *);
+int _strcmp(char *, char *);
+char *starts_with(const char *, const char *);
+char *_strcat(char *, char *);
 
-char *s_strtok(char *string, const char *deli);
+char *_strcpy(char *, char *);
+char *_strdup(const char *);
+void _puts(char *);
+int _putchar(char);
 
-char *s_getenv(const char *string, char *envp[]);
+char *_strncpy(char *, char *, int);
+char *_strncat(char *, char *, int);
+char *_strchr(char *, char);
 
-int sep_cmd(const char *user_command, char *result[], int num);
+char **strtow(char *, char *);
+char **strtow2(char *, char);
 
-char *handle_double_dollar(const char *cmd);
+char *_memset(char *, char, unsigned int);
+void ffree(char **);
+void *_realloc(void *, unsigned int, unsigned int);
 
-void remove_comment(char *cmd);
+int bfree(void **);
 
-int pid_len(int pid);
+int interactive(info_t *);
+int _delim(char, char *);
+int _isalpha(int);
+int _atoi(char *);
 
-void int_to_str(int num, char *str, int str_len);
+int _erratoi(char *);
+void print_error(info_t *, char *);
+int print_d(int, int);
+char *convert_number(long int, int, int);
+void remove_comments(char *);
 
-int get_status_code(int status);
+int _myexit(info_t *);
+int _mycd(info_t *);
+int _myhelp(info_t *);
 
-void int_to_string(int value, char *str, int size);
+int _myhistory(info_t *);
+int _myalia(info_t *);
 
+ssize_t get_input(info_t *);
+int _getline(info_t *, char **, size_t *);
+void sigintHandler(int);
 
+void clear_info(info_t *);
+void set_info(info_t *, char **);
+void free_info(info_t *, int);
 
-int execute_command(char *args[], int check, int *last_status, char *envp[]);
+char *_getenv(info_t *, const char *);
+int _myenv(info_t *);
+int _mysetenv(info_t *);
+int _myunsetenv(info_t *);
+int populate_env_list(info_t *);
 
-int handle_cd(char *mycmd, char *args[], int check,
-		int *last_status, char *envp[]);
+char **get_environ(info_t *);
+int _unsetenv(info_t *, char *);
+int _setenv(info_t *, char *, char *);
 
-int handle_exit(char *args[], int check);
+char *get_history_file(info_t *info);
+int write_history(info_t *info);
+int read_history(info_t *info);
+int build_history_list(info_t *info, char *buf, int linecount);
+int renumber_history(info_t *info);
 
-int handle_setenv(char *mycmd, char *args[], int check, int *last_status);
+list_t *add_node(list_t **, const char *, int);
+list_t *add_node_end(list_t **, const char *, int);
+size_t print_list_str(const list_t *);
+int delete_node_at_index(list_t **, unsigned int);
+void free_list(list_t **);
 
-int handle_unsetenv(char *mycmd, char *args[], int check, int *last_status);
+size_t list_len(const list_t *);
+char **list_to_strings(list_t *);
+size_t print_list(const list_t *);
+list_t *node_starts_with(list_t *, char *, char);
+ssize_t get_node_index(list_t *, list_t *);
 
-void replace_status_variable(char *args[], int count, int *last_status);
-
-
-typedef struct Alias
-{char *name;
-char *value;
-struct Alias *next; }
-Alias;
-
-void add_alias(const char *name, const char *value);
-
-void list_aliases(void);
-
-Alias *find_alias(const char *name);
-
-void remove_quote(char *input, char *output);
-
-
-void signal_handler(int signal);
-
-int ispositiveInt(char *str);
+int is_chain(info_t *, char *, size_t *);
+void check_chain(info_t *, char *, size_t *, size_t, size_t);
+int replace_alia(info_t *);
+int replace_vars(info_t *);
+int replace_string(char **, char *);
 
 #endif

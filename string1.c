@@ -1,79 +1,87 @@
 #include "shell.h"
 
 /**
- * s_strdup - function to duplicate a string
- * @string: the string to copy
- * Return: the string back
+ * _strcpy - copies a string
+ * @dest: the destination
+ * @src: the source
+ *
+ * Return: pointer to destination
  */
-char *s_strdup(const char *string)
+char *_strcpy(char *dest, char *src)
 {
-	int len = s_strlen(string);
-	char *copy;
+	int i = 0;
 
-	if (string == NULL)
-		return (NULL);
-
-	copy = malloc(len + 1);
-
-	if (copy == NULL)
-		return (NULL);
-
-	s_strcpy(copy, string);
-	return (copy);
-}
-/**
- * s_strlen - function to return the length of string
- * @string: the string
- * Return: the length of the string
- */
-int s_strlen(const char *string)
-{
-	int index = 0;
-
-	while (string[index] != '\0')
-		index++;
-	return (index);
-}
-
-/**
- * s_strcspn - function that return the index of the first occurence of char
- * @string: the string to search
- * @chr: the character to search for
- * Return: the index of the search
- */
-int s_strcspn(const char *string, const char *chr)
-{
-	int index = 0;
-
-	while (string[index] != '\0')
+	if (dest == src || src == 0)
+		return (dest);
+	while (src[i])
 	{
-		int charindex = 0;
-			while (chr[charindex] != '\0')
-			{
-				if (string[index] == chr[charindex])
-					return (index);
-				charindex++;
-			}
-		index++;
+		dest[i] = src[i];
+		i++;
 	}
-	return (index);
+	dest[i] = 0;
+	return (dest);
 }
 
 /**
- * s_strcpy - fuction to copy content of one string to another
- * @dest_string: the destination string
- * @src_string: the source string
- * Return: pointer to destination string
+ * _strdup - duplicates a string
+ * @str: the string to duplicate
+ *
+ * Return: pointer to the duplicated string
  */
-char *s_strcpy(char *dest_string, const char *src_string)
+char *_strdup(const char *str)
 {
-	while (*src_string != '\0')
-	{
-		*dest_string = *src_string;
-		dest_string++;
-		src_string++;
-	}
+	int length = 0;
+	char *ret;
 
-	*dest_string = '\0';
-	return (dest_string);
+	if (str == NULL)
+		return (NULL);
+	while (*str++)
+		length++;
+	ret = malloc(sizeof(char) * (length + 1));
+	if (!ret)
+		return (NULL);
+	for (length++; length--;)
+		ret[length] = *--str;
+	return (ret);
+}
+
+/**
+ *_puts - prints an input string
+ *@str: the string to be printed
+ *
+ * Return: Nothing
+ */
+void _puts(char *str)
+{
+	int i = 0;
+
+	if (!str)
+		return;
+	while (str[i] != '\0')
+	{
+		_putchar(str[i]);
+		i++;
+	}
+}
+
+/**
+ * _putchar - writes the character c to stdout
+ * @c: The character to print
+ *
+ * Return: On success 1.
+ * On error, -1 is returned, and errno is set appropriately.
+ */
+int _putchar(char c)
+{
+	static int i;
+	static char buf[WRITE_BUF_SIZE];
+
+	if (c == BUF_FLUSH || i >= WRITE_BUF_SIZE)
+	{
+		write(1, buf, i);
+		i = 0;
+	}
+	if (c != BUF_FLUSH)
+		buf[i++] = c;
+	return (1);
 }

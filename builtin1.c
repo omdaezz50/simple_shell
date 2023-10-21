@@ -1,92 +1,118 @@
 #include "shell.h"
 
 /**
- * prompt - function to print $
- * @c: character pass
- * @len: length of the string
- * Return: void
+ * _myhistory -function displays the history list, preceded
+ *              with line numbers, starting at 0.
+ * @info: Structure containing potential arguments. Used to maintain
+ *        constant function prototype.
+ *  Return: Always 0
  */
-void prompt(char *c, int len)
+
+int _myhistory(info_t *info)
 {
-	if (isatty(STDIN_FILENO))
-		write(STDOUT_FILENO, c, len);
+	print_list(info->history);
+	return (0);
 }
 
 /**
- * take_input - function to take command input
- * @input: th command to use
- * Return: return void
+ * unset_alia -function  sets alia to string
+ * @info: parameter struct
+ * @str: the string argument alia
+ *
+ * Return: Always 0 on success, 1 on error
  */
-ssize_t take_input(char *input)
-{
-	ssize_t read_bytes = read(STDIN_FILENO, input, INPUT_SIZE);
 
-	return ((read_bytes == -1) ? -1
-		: (read_bytes == 0) ? 0
-		: (input[read_bytes] = '\0', read_bytes));
+int unset_alia(info_t *info, char *str)
+{
+	char *p, c;
+	int ret;
+
+	p = _strchr(str, '=');
+	if (!p)
+		return (1);
+	c = *p;
+	*p = 0;
+	ret = delete_node_at_index(&(info->alia),
+		get_node_index(info->alia, node_starts_with(info->alia, str, -1)));
+	*p = c;
+	return (ret);
 }
 
 /**
- * exitShell - function to create an exitfunction
- * @status: the status code if any
- * Return: void
+ * set_alia -function sets alias to string
+ * @info: parameter struct
+ * @str: the string alias
+ * Return: Always 0 on success, 1 on error
  */
-void exitShell(int status)
+
+int set_alia(info_t *info, char *str)
 {
-	exit(status);
+	char *p;
+
+	p = _strchr(str, '=');
+	if (!p)
+		return (1);
+	if (!*++p)
+		return (unset_alia(info, str));
+
+	unset_alia(info, str);
+	return (add_node_end(&(info->alia), str, 0) == NULL);
 }
 
-
 /**
- * chk_cmd_before_fork - function to check before creating fork
- * @user_command: the command to check
- * Return: 0 for success and 1 otherwise
+ * print_alia -function prints an alia string
+ * @node: the alia node
+ * Return: Always 0
  */
-int chk_cmd_before_fork(char *user_command)
+
+int print_alia(list_t *node)
 {
-	char *path_lookup, *duplicate, *store_path;
+	char *p = NULL, *a = NULL;
 
-	path_lookup = getenv("PATH");
-
-	if (path_lookup == NULL)
-		return (-1);
-
-	duplicate = s_strdup(path_lookup);
-	if (duplicate == NULL)
-		return (-1);
-
-	store_path = strtok(duplicate, ":");
-
-	for (; store_path != NULL ;)
+	if (node)
 	{
-		char abs_path[PATH_SIZE];
-
-		s_strcpy(abs_path, store_path);
-		s_strcat(abs_path, "/");
-		s_strcat(abs_path, user_command);
-
-		if (access(abs_path, X_OK) == 0)
-		{
-			free(duplicate);
-			return (0);
-		}
-		store_path = strtok(NULL, ":");
+		p = _strchr(node->str, '=');
+		for (a = node->str; a <= p; a++)
+			_putchar(*a);
+		_putchar('\'');
+		_puts(p + 1);
+		_puts("'\n");
+		return (0);
 	}
-	free(duplicate);
 	return (1);
 }
 
 /**
- * signal_handler - function to handle signal
- * @signal: the signal
- * Return: void
+ * _myalia -function mimics the alia bultin (man alia)
+ * @info: Structure containing potential arguments. Used to maintain
+ *          constant function prototype.
+ *  Return: Always 0
  */
-void signal_handler(int signal)
+
+int _myalia(info_t *info)
 {
-	if (signal == SIGINT)
+	int i = 0;
+	char *p = NULL;
+	list_t *node = NULL;
+
+	if (info->argc == 1)
 	{
-		write(STDOUT_FILENO, "\n", 1);
-		prompt("$ ", s_strlen("$ "));
-		fflush(stdout);
+		node = info->alia;
+		while (node)
+		{
+			print_alia(node);
+			node = node->next;
+		}
+		return (0);
 	}
+	for (i = 1; info->argv[i]; i++)
+	{
+		p = _strchr(info->argv[i], '=');
+		if (p)
+			set_alia(info, info->argv[i]);
+		else
+			print_alia(node_starts_with(info->alia, info->argv[i], '='));
+	}
+
+	return (0);
 }
